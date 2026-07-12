@@ -1,0 +1,5 @@
+.env
+__pycache__/
+TMDB_all_movies.csv
+similarity.pkl
+*.db
