@@ -1,8 +1,16 @@
 import html
+import re
 import streamlit as st
 from utils import *
 
 load_css()
+
+
+def format_chat_text(content):
+    safe = html.escape(content)
+    safe = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", safe)
+    safe = re.sub(r"\*(.+?)\*", r"<i>\1</i>", safe)
+    return safe.replace("\n", "<br>")
 
 
 def render_ai_assistant():
@@ -38,7 +46,7 @@ def render_ai_assistant():
         content = msg.get("content", "")
         row_class = "msg-row user" if role == "user" else "msg-row ai"
         bubble_class = "bubble user" if role == "user" else "bubble ai"
-        safe_content = html.escape(content).replace("\n", "<br>")
+        safe_content = format_chat_text(content)
         st.markdown(
             f"<div class='{row_class}'><div class='{bubble_class}'>{safe_content}</div></div>",
             unsafe_allow_html=True,
