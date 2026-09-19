@@ -1,3 +1,4 @@
+import html
 import streamlit as st
 from utils import *
 
@@ -6,7 +7,7 @@ load_css()
 
 def render_profile():
     st.markdown("<div class='section-title'>Profile</div>", unsafe_allow_html=True)
-    if st.button("Logout", key="profile_logout_btn"):
+    if st.button("Logout", key="profile_logout_btn", type="secondary", icon=":material/logout:"):
         st.session_state.logged_in = False
         st.session_state.username = None
         st.rerun()
@@ -28,13 +29,13 @@ def render_profile():
         if profile_img:
             st.image(profile_img, width=120)
         else:
-            initials = (username or "U")[:2].upper()
+            initials = html.escape((username or "U")[:2].upper())
             st.markdown(f"<div class='avatar-circle'>{initials}</div>", unsafe_allow_html=True)
     
         uploaded_file = st.file_uploader(
             "Upload Profile Picture", type=["jpg", "png"], key="profile_upload"
         )
-        if uploaded_file and st.button("Save Photo", key="save_profile_photo"):
+        if uploaded_file and st.button("Save Photo", key="save_profile_photo", type="primary", icon=":material/upload:"):
             saved_path = save_profile_image(username, uploaded_file)
             if saved_path:
                 c.execute(
@@ -49,11 +50,20 @@ def render_profile():
     with col2:
         st.markdown("<div class='profile-card'>", unsafe_allow_html=True)
         st.markdown("<div class='section-title'>Profile Info</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='profile-label'>Username</div>{username}", unsafe_allow_html=True)
-        st.markdown(f"<div class='profile-label'>Email</div>{email_val or 'Not set'}", unsafe_allow_html=True)
-        st.markdown(f"<div class='profile-label'>Role</div>{role_val}", unsafe_allow_html=True)
         st.markdown(
-            f"<div class='profile-label'>Member since</div>{created_val or 'Unknown'}",
+            f"<div class='profile-label'>Username</div><div class='profile-value'>{html.escape(username or '')}</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<div class='profile-label'>Email</div><div class='profile-value'>{html.escape(email_val) if email_val else 'Not set'}</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<div class='profile-label'>Role</div><div class='profile-value'>{html.escape(role_val or 'user')}</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<div class='profile-label'>Member since</div><div class='profile-value'>{html.escape(created_val) if created_val else 'Unknown'}</div>",
             unsafe_allow_html=True,
         )
         st.markdown("</div>", unsafe_allow_html=True)
@@ -62,7 +72,7 @@ def render_profile():
     st.markdown("<div class='section-title'>Edit Profile</div>", unsafe_allow_html=True)
     with st.form("edit_profile_form"):
         new_email = st.text_input("Update Email", value=email_val or "")
-        submitted = st.form_submit_button("Save Changes")
+        submitted = st.form_submit_button("Save Changes", type="primary", icon=":material/save:")
     if submitted:
         updates = []
         params = []
@@ -92,7 +102,7 @@ def render_profile():
         current_pw = st.text_input("Current Password", type="password")
         new_pw = st.text_input("New Password", type="password")
         confirm_pw = st.text_input("Confirm New Password", type="password")
-        pw_submit = st.form_submit_button("Update Password")
+        pw_submit = st.form_submit_button("Update Password", type="primary", icon=":material/key:")
     if pw_submit:
         c.execute(
             "SELECT password_hash, salt, password FROM users WHERE username=?",

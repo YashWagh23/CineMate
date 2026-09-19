@@ -1,0 +1,7 @@
+streamlit
+pandas
+requests
+scikit-learn
+python-dotenv
+qrcode[pil]
+google-generativeai

@@ -1,5 +1,11 @@
 .env
 __pycache__/
 TMDB_all_movies.csv
+movies.pkl
 similarity.pkl
 *.db
+posters/
+profile_images/*
+.venv/
+venv/
+.claude/

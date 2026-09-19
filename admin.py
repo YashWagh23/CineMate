@@ -3,19 +3,53 @@ from utils import *
 
 
 def render_admin():
-    if show_admin:
         st.markdown("<div class='section-title'>Admin Dashboard</div>", unsafe_allow_html=True)
-    
-        tab1, tab2, tab3, tab4 = st.tabs(["Users", "Bookings", "Movies", "Theatres"])
-    
+
+        tab0, tab1, tab2, tab3, tab4 = st.tabs(["Overview", "Users", "Bookings", "Movies", "Theatres"])
+
+        with tab0:
+            c.execute("SELECT COUNT(*) FROM admin_movies")
+            total_movies = c.fetchone()[0]
+            c.execute("SELECT COUNT(*) FROM bookings")
+            total_bookings = c.fetchone()[0]
+            c.execute("SELECT COUNT(*) FROM users")
+            total_users = c.fetchone()[0]
+            c.execute("SELECT COUNT(*) FROM theatres")
+            total_theatres = c.fetchone()[0]
+
+            kpis = [
+                ("Total Movies", total_movies),
+                ("Total Bookings", total_bookings),
+                ("Total Users", total_users),
+                ("Total Theatres", total_theatres),
+            ]
+            kpi_cols = st.columns(4)
+            for col, (label, value) in zip(kpi_cols, kpis):
+                with col:
+                    st.markdown(
+                        f"<div class='admin-card'><div class='admin-kpi'>{value}</div>"
+                        f"<div class='admin-label'>{label}</div></div>",
+                        unsafe_allow_html=True,
+                    )
+
+            st.markdown("<div class='section-title'>Top Movies by Bookings</div>", unsafe_allow_html=True)
+            df_top_movies = pd.read_sql_query(
+                "SELECT movie, COUNT(*) as bookings FROM bookings GROUP BY movie ORDER BY bookings DESC LIMIT 5",
+                conn,
+            )
+            if not df_top_movies.empty:
+                st.bar_chart(df_top_movies.set_index("movie"))
+            else:
+                st.info("No bookings yet")
+
         with tab1:
             users_df = pd.read_sql_query("SELECT username, role FROM users", conn)
             st.dataframe(users_df, use_container_width=True)
-    
+
         with tab2:
             bookings_df = pd.read_sql_query("SELECT * FROM bookings", conn)
             st.dataframe(bookings_df, use_container_width=True)
-    
+
         with tab3:
             st.markdown("<div class='section-title'>Add Movie</div>", unsafe_allow_html=True)
             with st.form("admin_add_movie"):
@@ -25,7 +59,7 @@ def render_admin():
                 poster_url = st.text_input("Poster URL (optional)")
                 language = st.selectbox("Language", ["english", "hindi", "tamil", "telugu"])
                 is_running = st.checkbox("Currently Running", value=True)
-                submitted = st.form_submit_button("Add Movie")
+                submitted = st.form_submit_button("Add Movie", type="primary", icon=":material/add:")
             if submitted:
                 if not title:
                     st.warning("Title is required")
@@ -45,7 +79,7 @@ def render_admin():
             titles = [r[0] for r in c.fetchall()]
             if titles:
                 to_remove = st.selectbox("Select Movie", titles, key="remove_movie")
-                if st.button("Remove Selected Movie"):
+                if st.button("Remove Selected Movie", type="secondary", icon=":material/delete:"):
                     c.execute("DELETE FROM admin_movies WHERE title=?", (to_remove,))
                     conn.commit()
                     st.success("Movie removed")
@@ -58,7 +92,7 @@ def render_admin():
                 city = st.text_input("City")
                 theatre = st.text_input("Theatre Name")
                 show_time = st.text_input("Show Time (e.g., 6:30 PM)")
-                submitted = st.form_submit_button("Add Showtime")
+                submitted = st.form_submit_button("Add Showtime", type="primary", icon=":material/add:")
             if submitted:
                 if not city or not theatre or not show_time:
                     st.warning("City, Theatre, and Show Time are required")
@@ -77,7 +111,7 @@ def render_admin():
                 options = {f"{r[1]} | {r[2]} | {r[3]} (#{r[0]})": r[0] for r in rows}
                 choice = st.selectbox("Select Showtime", list(options.keys()))
                 theatre_id = options[choice]
-                if st.button("Remove Selected Showtime"):
+                if st.button("Remove Selected Showtime", type="secondary", icon=":material/delete:"):
                     c.execute("DELETE FROM theatres WHERE id=?", (theatre_id,))
                     conn.commit()
                     st.success("Showtime removed")

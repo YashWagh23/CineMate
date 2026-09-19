@@ -1,3 +1,4 @@
+import html
 import streamlit as st
 from utils import *
 
@@ -37,8 +38,9 @@ def render_ai_assistant():
         content = msg.get("content", "")
         row_class = "msg-row user" if role == "user" else "msg-row ai"
         bubble_class = "bubble user" if role == "user" else "bubble ai"
+        safe_content = html.escape(content).replace("\n", "<br>")
         st.markdown(
-            f"<div class='{row_class}'><div class='{bubble_class}'>{content}</div></div>",
+            f"<div class='{row_class}'><div class='{bubble_class}'>{safe_content}</div></div>",
             unsafe_allow_html=True,
         )
     st.markdown("<div id='chat-bottom'></div>", unsafe_allow_html=True)
@@ -46,12 +48,12 @@ def render_ai_assistant():
     
     with st.form("chat_form", clear_on_submit=True):
         user_msg = st.text_input("Type a message...", key="chat_input")
-        sent = st.form_submit_button("Send")
+        sent = st.form_submit_button("Send", type="primary", icon=":material/send:")
     if sent and user_msg:
         handle_message(user_msg)
         st.rerun()
     
-    if st.button("Clear Conversation", key="chat_clear_btn"):
+    if st.button("Clear Conversation", key="chat_clear_btn", type="secondary", icon=":material/delete_sweep:"):
         st.session_state.chat_messages = []
         st.rerun()
     

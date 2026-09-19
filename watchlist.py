@@ -30,15 +30,15 @@ def render_watchlist():
             ["Select"] + items,
             key="watchlist_notify",
         )
-        if st.button("Enable Notification", key="notify_btn") and notify_movie != "Select":
+        if st.button("Enable Notification", key="notify_btn", type="primary", icon=":material/notifications_active:") and notify_movie != "Select":
             st.success(f"Notification enabled for {notify_movie}")
-    
-        for item in items:
-            col1, col2 = st.columns([4, 1])
-            with col1:
-                st.write(item)
-            with col2:
-                if st.button("Remove", key=f"remove_{item}"):
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        cols = st.columns(4)
+        for i, item in enumerate(items):
+            with cols[i % 4]:
+                render_movie_card(item)
+                if st.button("Remove", key=f"remove_{item}", type="secondary", icon=":material/delete:", use_container_width=True):
                     st.session_state.watchlist.remove(item)
                     st.success("Removed")
                     st.rerun()

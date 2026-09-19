@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import html
 import os
 import pickle
 import re
@@ -66,144 +67,322 @@ def load_css():
     st.markdown(
         """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
-html, body, [class*="css"] {
-    font-family: 'Poppins', sans-serif;
-}
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+/* ============ DESIGN TOKENS ============ */
 :root {
-    --bg1: #050505;
-    --bg2: #0b0b1a;
-    --card: rgba(20,20,20,0.75);
-    --line: rgba(255,255,255,0.12);
-    --accent: #E50914;
-    --accent2: #E50914;
-    --text: #f5f5f5;
+    /* surfaces */
+    --bg: #0a0a0d;
+    --bg-elevated: #111114;
+    --surface: #16161b;
+    --surface-2: #1d1d23;
+    --border: rgba(255,255,255,0.09);
+    --border-strong: rgba(255,255,255,0.18);
+    /* text */
+    --text: #f3f2ef;
+    --muted: #9b9ba6;
+    --muted-2: #6f6f7a;
+    /* brand */
+    --accent: #e11d2e;
+    --accent-hover: #ff2f3f;
+    --accent-soft: rgba(225,29,46,0.14);
+    --accent-border: rgba(225,29,46,0.4);
+    --gold: #f0b93d;
+    --success: #34c98e;
+    /* legacy alias used by a few older inline styles */
+    --card: var(--surface);
+    --line: var(--border);
+    /* radius scale (shape lock: pills for actions, lg for cards, md for inputs) */
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 18px;
+    --r-pill: 999px;
+    /* spacing (8pt) */
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+    --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+    /* type scale, 1.25 ratio off a 16px base */
+    --fs-xs: 0.75rem; --fs-sm: 0.875rem; --fs-base: 1rem;
+    --fs-md: 1.125rem; --fs-lg: 1.375rem; --fs-xl: 1.75rem;
+    --fs-2xl: 2.25rem; --fs-3xl: 3rem;
+    --font-display: 'Bebas Neue', 'Manrope', sans-serif;
+    --font-body: 'Manrope', 'Segoe UI', sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+html, body, [class*="css"] {
+    font-family: var(--font-body);
 }
 .stApp {
-    background: radial-gradient(1200px 800px at 20% 0%, #141414 0%, var(--bg1) 40%, var(--bg2) 100%);
+    background:
+        radial-gradient(1100px 700px at 15% -10%, rgba(225,29,46,0.10) 0%, transparent 55%),
+        var(--bg);
     color: var(--text);
-    animation: fadein 0.4s ease-in;
-    font-family: "Inter", "Segoe UI", sans-serif;
+    font-family: var(--font-body);
 }
-[data-testid="stAppViewContainer"].auth-bg {
-    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-                url("assets/background.jpg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    height: 100vh;
-}
+.stApp, .stApp * { scrollbar-color: var(--border-strong) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: var(--r-pill); }
+::-webkit-scrollbar-track { background: transparent; }
+
 @keyframes fadein {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
 }
+.block-container { animation: fadein 0.35s ease-out; }
+
+/* focus-visible ring for keyboard users, everywhere */
+button:focus-visible, a:focus-visible, input:focus-visible,
+[data-testid="stCheckbox"] label:focus-within {
+    outline: 2px solid var(--accent) !important;
+    outline-offset: 2px !important;
+}
+
+/* ============ TYPOGRAPHY ============ */
 .section-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin: 0.5rem 0 0.75rem 0;
+    font-family: var(--font-body);
+    font-size: var(--fs-lg);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin: var(--sp-6) 0 var(--sp-3) 0;
 }
-.card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 14px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+.eyebrow {
+    display: block;
+    font-family: var(--font-body);
+    font-size: var(--fs-xs);
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: var(--sp-2);
 }
+.brand-word {
+    font-family: var(--font-display);
+    font-size: var(--fs-2xl);
+    letter-spacing: 0.03em;
+    color: var(--text);
+    line-height: 1;
+}
+.brand-word .accent { color: var(--accent); }
+
+/* ============ CARDS / CONTAINERS ============ */
+.card, .hero, .booking-card, .summary-card, .theatre-card, .ticket-card,
+.profile-card, .payment-card, .admin-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+}
+.card, .booking-card, .profile-card, .payment-card { padding: var(--sp-4); }
 .card:hover {
-    transform: translateY(-2px);
+    border-color: var(--border-strong);
     box-shadow: 0 16px 36px rgba(0,0,0,0.35);
 }
 .hero {
-    background: linear-gradient(130deg, rgba(229,9,20,0.18), rgba(229,9,20,0.08));
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    padding: 18px;
+    background: linear-gradient(135deg, rgba(225,29,46,0.16), rgba(225,29,46,0.02) 60%);
+    padding: var(--sp-6);
 }
-.stButton>button {
-    background-color: #e50914 !important;
-    color: white !important;
-    border-radius: 10px !important;
-    padding: 10px 20px !important;
-    border: none !important;
-    font-weight: bold !important;
-    font-size: 16px !important;
-    transition: all 0.3s ease !important;
+/* Empty markdown div "cards" (an unclosed-div hack that doesn't actually wrap
+   Streamlit widgets) collapse to a stray decorative bar; hide them instead. */
+.card:empty, .hero:empty, .booking-card:empty, .profile-card:empty,
+.payment-card:empty, .ticket-card:empty, .summary-card:empty,
+.admin-card:empty, .theatre-card:empty {
+    display: none;
 }
-.stButton>button:hover {
-    background-color: #ff1f1f !important;
-    transform: scale(1.05) !important;
-    box-shadow: 0 0 10px #e50914 !important;
+/* Native Streamlit bordered containers, restyled to match the app theme */
+div[data-testid="stVerticalBlockBorderWrapper"]:has(> div > div[data-testid="stVerticalBlock"]) {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--sp-1);
+}
+
+/* ============ BUTTONS (primary vs secondary hierarchy) ============ */
+.stButton>button, .stFormSubmitButton>button, .stDownloadButton>button {
+    font-family: var(--font-body) !important;
+    border-radius: var(--r-pill) !important;
+    padding: 0.6rem 1.4rem !important;
+    font-weight: 700 !important;
+    font-size: var(--fs-sm) !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease !important;
+    border: 1px solid transparent !important;
+}
+.stButton>button:active, .stFormSubmitButton>button:active, .stDownloadButton>button:active {
+    transform: scale(0.98) !important;
+}
+/* primary: the one loud action */
+.stButton>button[kind="primary"], .stFormSubmitButton>button[kind="primary"],
+.stDownloadButton>button[kind="primary"] {
+    background: var(--accent) !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 20px rgba(225,29,46,0.28) !important;
+}
+.stButton>button[kind="primary"]:hover, .stFormSubmitButton>button[kind="primary"]:hover,
+.stDownloadButton>button[kind="primary"]:hover {
+    background: var(--accent-hover) !important;
+    box-shadow: 0 10px 26px rgba(225,29,46,0.4) !important;
+}
+/* secondary: everything else, quiet by default */
+.stButton>button[kind="secondary"], .stFormSubmitButton>button[kind="secondary"],
+.stDownloadButton>button[kind="secondary"] {
+    background: transparent !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border-strong) !important;
+}
+.stButton>button[kind="secondary"]:hover, .stFormSubmitButton>button[kind="secondary"]:hover,
+.stDownloadButton>button[kind="secondary"]:hover {
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+}
+.stButton>button:disabled {
+    opacity: 0.4 !important;
+    box-shadow: none !important;
 }
 .link-btn {
     display: inline-block;
     text-decoration: none;
-    padding: 0.35rem 0.7rem;
-    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    border-radius: var(--r-pill);
     background: var(--accent);
     color: #ffffff;
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: var(--fs-sm);
     transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
 }
 .link-btn:hover {
-    background: #ff1f2f;
-    transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 8px 18px rgba(229,9,20,0.35);
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(225,29,46,0.35);
 }
+
+/* ============ SIDEBAR ============ */
 section[data-testid="stSidebar"] {
-    background: #0b0b0b;
+    background: var(--bg-elevated);
     color: var(--text);
+    border-right: 1px solid var(--border);
 }
+section[data-testid="stSidebar"] .stTextInput label,
+section[data-testid="stSidebar"] .stSelectbox label {
+    font-size: var(--fs-xs) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted) !important;
+    font-weight: 700 !important;
+}
+
+/* ============ IMAGES ============ */
 .stImage img {
-    border-radius: 14px;
+    border-radius: var(--r-md);
     box-shadow: 0 12px 28px rgba(0,0,0,0.35);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .stImage img:hover {
-    transform: scale(1.03);
+    transform: scale(1.02);
     box-shadow: 0 16px 34px rgba(0,0,0,0.45);
 }
-.section-title {
-    letter-spacing: 0.3px;
-}
+
+/* ============ FORMS / INPUTS ============ */
 .stTextInput>div>div>input,
 .stSelectbox>div>div>div,
-.stTextArea>div>textarea {
-    background: #121212;
-    color: var(--text);
-    border: 1px solid var(--line);
+.stTextArea>div>textarea,
+.stDateInput input,
+.stNumberInput input {
+    background: var(--surface-2) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--r-md) !important;
 }
 .stTextInput>div>div>input:focus,
-.stSelectbox>div>div>div:focus,
+.stSelectbox>div[data-baseweb="select"]:focus-within>div,
 .stTextArea>div>textarea:focus {
-    border: 1px solid var(--accent);
-    outline: none;
+    border: 1px solid var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-soft) !important;
+    outline: none !important;
 }
-.seat {
-    display: inline-block;
-    padding: 6px 8px;
-    border-radius: 8px;
-    font-weight: 700;
-    text-align: center;
-    width: 44px;
-    border: 1px solid var(--line);
-    margin-bottom: 6px;
-    cursor: pointer;
+.stTextInput label, .stSelectbox label, .stTextArea label, .stRadio label,
+.stDateInput label, .stNumberInput label, .stFileUploader label {
+    font-weight: 700 !important;
+    color: var(--text) !important;
 }
-.seat-available {
-    background: rgba(229, 9, 20, 0.12);
+[data-testid="stForm"] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--sp-5) !important;
+}
+
+/* ============ MOVIE CARD ============ */
+.movie-card { margin-bottom: var(--sp-2); }
+.movie-card-media {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--r-lg);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+}
+.movie-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.35s ease;
+}
+.movie-card:hover .movie-card-media img { transform: scale(1.08); }
+.movie-card:hover .movie-card-media {
+    border-color: var(--border-strong);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.5);
+}
+.movie-card-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.15) 55%, transparent 75%);
+}
+.movie-card-title {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: var(--sp-3);
     color: #ffffff;
+    font-weight: 800;
+    font-size: var(--fs-sm);
+    line-height: 1.25;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.6);
 }
-.seat-selected {
-    background: rgba(229, 9, 20, 0.35);
-    color: #ffffff;
+.movie-card-badge {
+    position: absolute;
+    top: var(--sp-2);
+    right: var(--sp-2);
+    background: rgba(10,10,13,0.72);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: var(--gold);
+    font-weight: 800;
+    font-size: var(--fs-xs);
+    padding: 3px 8px;
+    border-radius: var(--r-pill);
 }
-.seat-booked {
-    background: rgba(229, 9, 20, 0.2);
-    color: #ffffff;
+.movie-card-tag {
+    position: absolute;
+    top: var(--sp-2);
+    left: var(--sp-2);
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: var(--r-pill);
 }
+
+/* ============ SEATS ============ */
 .legend-dot {
     display: inline-block;
     width: 10px;
@@ -216,256 +395,254 @@ section[data-testid="stSidebar"] {
     align-items: center;
     justify-content: center;
     width: 44px;
-    height: 32px;
-    border-radius: 8px;
-    border: 1px solid var(--line);
+    height: 34px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--border);
     font-weight: 700;
-    background: rgba(229, 9, 20, 0.12);
-    color: #ffffff;
+    font-size: var(--fs-sm);
+    background: var(--surface-2);
+    color: var(--text);
     cursor: pointer;
     margin-bottom: 6px;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, border-color .15s ease;
 }
 .seat-grid [data-testid="stCheckbox"] label:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
 }
 .seat-grid [data-testid="stCheckbox"] input[type="checkbox"] {
     display: none;
 }
 .seat-grid [data-testid="stCheckbox"] label:has(input:checked) {
-    background: rgba(229, 9, 20, 0.35);
+    background: var(--accent);
+    border-color: var(--accent);
     color: #ffffff;
 }
 .seat-grid [data-testid="stCheckbox"] label:has(input:disabled) {
-    background: rgba(229, 9, 20, 0.2);
-    color: #ffffff;
+    background: rgba(255,255,255,0.03);
+    color: var(--muted-2);
+    border-style: dashed;
     cursor: not-allowed;
 }
 .seat-row-label {
-    font-weight: 700;
-    color: #cbd5f5;
-    padding-top: 6px;
+    font-weight: 800;
+    color: var(--muted);
+    padding-top: 8px;
 }
 .seat-tier-legend {
     display: inline-block;
-    padding: 4px 10px;
-    border-radius: 999px;
-    border: 1px solid var(--line);
-    margin-right: 8px;
-    font-size: 0.85rem;
+    padding: 4px 12px;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--border);
+    margin-right: var(--sp-2);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    color: var(--muted);
 }
-.tier-gold { background: rgba(229, 9, 20, 0.2); color: #ffffff; }
-.tier-silver { background: rgba(229, 9, 20, 0.18); color: #ffffff; }
-.tier-regular { background: rgba(229, 9, 20, 0.15); color: #ffffff; }
+.tier-gold { border-color: rgba(240,185,61,0.5); color: var(--gold); }
+.tier-silver { border-color: var(--border-strong); color: var(--text); }
+.tier-regular { border-color: var(--border); color: var(--muted); }
+@media (max-width: 768px) {
+    .seat-grid [data-testid="stCheckbox"] label {
+        width: 34px;
+        height: 28px;
+        font-size: 0.7rem;
+    }
+}
+
+/* ============ BOOKING FLOW ============ */
 .booking-steps {
     display: flex;
-    gap: 10px;
+    gap: var(--sp-2);
     flex-wrap: wrap;
-    margin-bottom: 12px;
+    margin-bottom: var(--sp-4);
 }
 .booking-step {
-    padding: 6px 12px;
-    border-radius: 999px;
-    border: 1px solid var(--line);
-    background: rgba(255,255,255,0.04);
-    font-size: 0.85rem;
+    padding: 6px 14px;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    color: var(--muted);
 }
-.booking-card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 14px;
-    margin-bottom: 12px;
-}
-.summary-card {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 16px;
-    position: sticky;
-    top: 16px;
-}
+.summary-card { padding: var(--sp-5); position: sticky; top: var(--sp-4); }
 .pill {
     display: inline-block;
-    padding: 6px 12px;
-    border-radius: 999px;
-    border: 1px solid var(--line);
+    padding: 6px 14px;
+    border-radius: var(--r-pill);
+    border: 1px solid var(--border);
     margin: 4px 6px 4px 0;
-    background: rgba(255,255,255,0.04);
+    background: var(--surface);
+    font-size: var(--fs-sm);
 }
-.pill-active {
-    background: rgba(252, 191, 73, 0.22);
-    color: #fff7ed;
-}
-.theatre-card {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 12px;
-    background: rgba(255,255,255,0.04);
-}
-.theatre-card.pill-active {
-    background: rgba(229, 9, 20, 0.2);
-    color: #ffffff;
-    border-color: rgba(229, 9, 20, 0.6);
-}
-.theatre-card:hover {
-    box-shadow: 0 10px 24px rgba(0,0,0,0.25);
-}
-.ticket-card {
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 16px;
-    background: rgba(255,255,255,0.05);
-}
-.profile-card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 12px;
-}
+.pill-active { background: var(--accent-soft); border-color: var(--accent-border); color: var(--text); }
+.theatre-card { padding: var(--sp-3); transition: box-shadow .2s ease, border-color .2s ease; }
+.theatre-card.pill-active { background: var(--accent-soft); border-color: var(--accent-border); }
+.theatre-card:hover { box-shadow: 0 10px 24px rgba(0,0,0,0.3); }
+.ticket-card { padding: var(--sp-5); }
+
+/* ============ PROFILE ============ */
 .avatar-circle {
     width: 120px;
     height: 120px;
     border-radius: 50%;
-    background: rgba(229,9,20,0.2);
-    border: 1px solid rgba(229,9,20,0.6);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-border);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 36px;
-    font-weight: 800;
-    color: #ffffff;
-    margin-bottom: 8px;
+    font-family: var(--font-display);
+    font-size: var(--fs-2xl);
+    letter-spacing: 0.04em;
+    color: var(--text);
+    margin-bottom: var(--sp-3);
 }
 .profile-label {
-    color: #cbd5f5;
-    font-size: 0.85rem;
+    color: var(--muted);
+    font-size: var(--fs-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    margin-top: var(--sp-3);
 }
-.payment-card {
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 16px;
-    background: rgba(255,255,255,0.05);
+.profile-value {
+    font-size: var(--fs-md);
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: var(--sp-1);
 }
+
+/* ============ AI CHAT ============ */
 .chat-wrap {
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 12px;
-    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--sp-4);
+    background: var(--surface);
     max-height: 520px;
     overflow-y: auto;
 }
 .bubble {
-    padding: 10px 12px;
-    border-radius: 12px;
-    margin: 8px 0;
+    padding: 10px 14px;
+    border-radius: var(--r-lg);
+    margin: var(--sp-2) 0;
     max-width: 80%;
+    font-size: var(--fs-sm);
+    line-height: 1.5;
 }
 .bubble.user {
-    background: rgba(229, 9, 20, 0.25);
+    background: var(--accent);
+    color: #ffffff;
     margin-left: auto;
+    border-bottom-right-radius: var(--r-sm);
 }
 .bubble.ai {
-    background: rgba(255,255,255,0.08);
-    border-left: 3px solid #ef4444;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: var(--r-sm);
 }
-.msg-row {
-    display: flex;
-}
-.msg-row.user {
-    justify-content: flex-end;
-}
-.msg-row.ai {
-    justify-content: flex-start;
-}
+.msg-row { display: flex; }
+.msg-row.user { justify-content: flex-end; }
+.msg-row.ai { justify-content: flex-start; }
+
+/* ============ TABS (top nav) ============ */
 .stTabs [data-baseweb="tab-list"] {
-    justify-content: flex-start !important;
-    gap: 15px;
-    padding-left: 10px;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-pill);
+    padding: 5px;
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
+    margin: var(--sp-2) 0 var(--sp-6) 0;
 }
 .stTabs [data-baseweb="tab"] {
-    font-size: 22px !important;
-    font-weight: 800 !important;
-    color: #bbb !important;
-    padding: 8px 16px;
-}
-.stTabs [aria-selected="true"] {
-    color: #E50914 !important;
-    font-size: 26px !important;
-    font-weight: 900 !important;
-    border-bottom: 3px solid #E50914;
-    text-shadow: 0 0 10px rgba(229, 9, 20, 0.7);
+    font-family: var(--font-body) !important;
+    font-size: var(--fs-sm) !important;
+    font-weight: 700 !important;
+    color: var(--muted) !important;
+    padding: 10px 20px !important;
+    border-radius: var(--r-pill) !important;
+    transition: color .15s ease, background .15s ease;
 }
 .stTabs [data-baseweb="tab"]:hover {
-    color: #ffffff !important;
-    transform: scale(1.1);
-    transition: 0.3s;
+    color: var(--text) !important;
+    background: rgba(255,255,255,0.05);
 }
+.stTabs [aria-selected="true"] {
+    color: #ffffff !important;
+    background: var(--accent) !important;
+    font-weight: 800 !important;
+    box-shadow: 0 6px 16px rgba(225,29,46,0.3);
+}
+.stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] {
+    display: none !important;
+}
+
+/* ============ AUTH SCREEN ============ */
 .logo-link img {
     height: 52px;
     transition: transform 0.2s ease, filter 0.2s ease;
 }
 .logo-link img:hover {
     transform: scale(1.03);
-    filter: drop-shadow(0 0 6px rgba(229,9,20,0.5));
-}
-.auth-center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
+    filter: drop-shadow(0 0 6px rgba(225,29,46,0.5));
 }
 .auth-card {
-    background: rgba(0,0,0,0.7);
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+    background: rgba(10,10,13,0.78);
+    backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: var(--r-lg);
+    padding: var(--sp-6);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
 }
-.admin-card {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 16px;
-}
+
+/* ============ ADMIN ============ */
+.admin-card { padding: var(--sp-4); }
 .admin-kpi {
-    font-size: 1.6rem;
-    font-weight: 800;
+    font-family: var(--font-display);
+    font-size: var(--fs-2xl);
+    letter-spacing: 0.02em;
+    color: var(--text);
 }
 .admin-label {
-    color: #cbd5f5;
-    font-size: 0.9rem;
+    color: var(--muted);
+    font-size: var(--fs-sm);
+    font-weight: 600;
 }
 .admin-nav-title {
     font-weight: 800;
-    margin-bottom: 8px;
+    margin-bottom: var(--sp-2);
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: var(--fs-xs);
+    letter-spacing: 0.08em;
 }
-@media (max-width: 768px) {
-    .seat-grid [data-testid="stCheckbox"] label {
-        width: 34px;
-        height: 28px;
-        font-size: 0.75rem;
-    }
-}
+
+/* ============ TAGS / BADGES ============ */
 .tag {
     display: inline-block;
-    padding: 4px 8px;
-    border-radius: 999px;
+    padding: 4px 10px;
+    border-radius: var(--r-pill);
     font-size: 0.7rem;
-    border: 1px solid var(--line);
+    font-weight: 700;
+    border: 1px solid var(--border);
     margin-right: 6px;
-    background: rgba(255,255,255,0.06);
+    background: var(--surface);
+    color: var(--muted);
 }
-.tag-green { color: #ffffff; background: rgba(229, 9, 20, 0.22); }
-.tag-blue { color: #ffffff; background: rgba(229, 9, 20, 0.2); }
-.tag-amber { color: #ffffff; background: rgba(229, 9, 20, 0.2); }
-.tag-red { color: #ffffff; background: rgba(229, 9, 20, 0.25); }
+.tag-green { color: var(--success); border-color: rgba(52,201,142,0.4); background: rgba(52,201,142,0.1); }
+.tag-blue { color: #6fb3ff; border-color: rgba(111,179,255,0.4); background: rgba(111,179,255,0.1); }
+.tag-amber { color: var(--gold); border-color: rgba(240,185,61,0.4); background: rgba(240,185,61,0.1); }
+.tag-red { color: var(--accent-hover); border-color: var(--accent-border); background: var(--accent-soft); }
+
+/* ============ MISC ============ */
 .skeleton {
     height: 180px;
-    border-radius: 12px;
-    background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+    border-radius: var(--r-lg);
+    background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.10), rgba(255,255,255,0.04));
     background-size: 200% 100%;
     animation: shimmer 1.2s infinite;
 }
@@ -475,71 +652,81 @@ section[data-testid="stSidebar"] {
 }
 .toast {
     padding: 10px 14px;
-    border-radius: 10px;
-    background: rgba(34,197,94,0.18);
-    color: #dcfce7;
-    border: 1px solid rgba(34,197,94,0.4);
-    margin-bottom: 10px;
+    border-radius: var(--r-md);
+    background: rgba(52,201,142,0.14);
+    color: #bdf5e0;
+    border: 1px solid rgba(52,201,142,0.4);
+    margin-bottom: var(--sp-2);
 }
-.tooltip-seat {
-    position: relative;
-    cursor: pointer;
-}
+.tooltip-seat { position: relative; cursor: pointer; }
 .tooltip-seat:hover::after {
     content: "Select seat";
     position: absolute;
     top: -28px;
     left: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.8);
     color: white;
-    padding: 4px 6px;
-    border-radius: 6px;
+    padding: 4px 8px;
+    border-radius: var(--r-sm);
     font-size: 0.7rem;
 }
 .booking-history-card {
-    background: #111;
-    border: 1px solid #333;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 14px;
-    box-shadow: 0 10px 26px rgba(0,0,0,0.4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--sp-4);
+    margin-bottom: var(--sp-3);
     display: flex;
     justify-content: space-between;
-    gap: 16px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    gap: var(--sp-4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color .2s ease;
 }
 .booking-history-card:hover {
-    transform: scale(1.01);
-    box-shadow: 0 14px 32px rgba(229,9,20,0.25);
+    border-color: var(--border-strong);
+    box-shadow: 0 14px 32px rgba(0,0,0,0.4);
 }
-.bh-title {
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: #ffffff;
-    margin-bottom: 6px;
-}
-.bh-sub {
-    color: #cbd5f5;
-    font-size: 0.9rem;
-    margin-bottom: 4px;
-}
+.bh-title { font-size: var(--fs-md); font-weight: 800; color: var(--text); margin-bottom: var(--sp-1); }
+.bh-sub { color: var(--muted); font-size: var(--fs-sm); margin-bottom: 4px; }
 .bh-seat {
     display: inline-block;
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: rgba(229,9,20,0.2);
-    color: #ffffff;
-    border: 1px solid rgba(229,9,20,0.5);
-    font-size: 0.85rem;
+    padding: 4px 10px;
+    border-radius: var(--r-pill);
+    background: var(--accent-soft);
+    color: var(--text);
+    border: 1px solid var(--accent-border);
+    font-size: var(--fs-sm);
     margin-bottom: 6px;
 }
-.bh-id {
-    color: #9ca3af;
-    font-size: 0.75rem;
-}
+.bh-id { color: var(--muted-2); font-size: var(--fs-xs); }
 </style>
 """,
         unsafe_allow_html=True
+    )
+
+
+def render_movie_card(title, poster_url=None, rating=None, tag=None, tag_class="tag-red"):
+    safe_title = html.escape(title or "Untitled")
+    poster = poster_url or "https://placehold.co/500x750/16161b/6f6f7a?text=No+Poster"
+    badge_html = ""
+    if rating not in (None, ""):
+        try:
+            badge_html = f'<div class="movie-card-badge">&#9733; {float(rating):.1f}</div>'
+        except (TypeError, ValueError):
+            badge_html = ""
+    tag_html = f'<span class="movie-card-tag {tag_class}">{html.escape(str(tag))}</span>' if tag else ""
+    st.markdown(
+        f"""
+        <div class="movie-card">
+            <div class="movie-card-media">
+                <img src="{poster}" alt="{safe_title}" loading="lazy" />
+                {badge_html}
+                {tag_html}
+                <div class="movie-card-scrim"></div>
+                <div class="movie-card-title">{safe_title}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
 load_css()
@@ -791,7 +978,7 @@ def load_models():
 movies, similarity = load_models()
 selected_movie = None
 
-API_KEY = os.getenv("TMDB_API_KEY", "84a2f04db296780859d763c8f71ed855")
+API_KEY = os.getenv("TMDB_API_KEY", "")
 
 # ================= API HELPERS =================
 @st.cache_data(ttl=3600)
@@ -805,7 +992,7 @@ def fetch_poster(title):
                 return "https://image.tmdb.org/t/p/w500" + poster_path
     except Exception:
         pass
-    return "https://via.placeholder.com/500x750?text=No+Image"
+    return "https://placehold.co/500x750/141414/f5f5f5?text=No+Poster"
 
 @st.cache_data(ttl=3600)
 def fetch_trailer(movie_title):
@@ -1035,8 +1222,6 @@ def rebuild_movie_db(api_key, pages=10):
     hindi_kw = [m for m in hindi_kw if m.get("original_language") == "hi"]
 
     all_movies = english + hindi + hindi_kw + tamil + telugu + malayalam + kannada
-    print("Bollywood count:", len(hindi) + len(hindi_kw))
-    print("Hollywood count:", len(english))
     seen = set()
     for m in all_movies:
         tmdb_id = m.get("id")
@@ -1214,11 +1399,7 @@ def send_booking_email(to_email, booking):
     smtp_from = os.getenv("SMTP_FROM", smtp_user or "no-reply@example.com")
     use_tls = os.getenv("SMTP_TLS", "true").lower() == "true"
 
-    print("SMTP EMAIL:", smtp_user)
-    print("SMTP PASSWORD:", "Loaded" if smtp_pass else "Missing")
-
     if not smtp_host or not smtp_user or not smtp_pass or not to_email:
-        print("SMTP not configured properly")
         return False, "SMTP not configured"
 
     html_body = f"""
@@ -1373,239 +1554,6 @@ def theatre_availability(movie, city, theatre, show_time, show_date):
 theatres_by_city = fetch_theatres_from_db()
 if not theatres_by_city:
     theatres_by_city = default_theatres_by_city
-
-def admin_app():
-    render_logo()
-    st.sidebar.markdown("<div class='admin-nav-title'>Admin Panel</div>", unsafe_allow_html=True)
-    nav = st.sidebar.radio(
-        "Navigation",
-        ["Dashboard", "Movies", "Theatres", "Bookings", "Users"],
-        label_visibility="collapsed",
-    )
-    if st.sidebar.button("Logout", key="admin_logout_btn"):
-        st.session_state.logged_in = False
-        st.session_state.username = None
-        st.session_state.role = "user"
-        st.rerun()
-
-    st.title("Admin Dashboard")
-
-    if nav == "Dashboard":
-        c.execute("SELECT COUNT(*) FROM admin_movies")
-        total_movies = c.fetchone()[0]
-        c.execute("SELECT COUNT(*) FROM bookings")
-        total_bookings = c.fetchone()[0]
-        c.execute("SELECT COUNT(*) FROM users")
-        total_users = c.fetchone()[0]
-        c.execute("SELECT COUNT(*) FROM theatres")
-        total_theatres = c.fetchone()[0]
-
-        cols = st.columns(4)
-        with cols[0]:
-            st.markdown(
-                f"<div class='admin-card'><div class='admin-kpi'>{total_movies}</div><div class='admin-label'>Total Movies</div></div>",
-                unsafe_allow_html=True,
-            )
-        with cols[1]:
-            st.markdown(
-                f"<div class='admin-card'><div class='admin-kpi'>{total_bookings}</div><div class='admin-label'>Total Bookings</div></div>",
-                unsafe_allow_html=True,
-            )
-        with cols[2]:
-            st.markdown(
-                f"<div class='admin-card'><div class='admin-kpi'>{total_users}</div><div class='admin-label'>Total Users</div></div>",
-                unsafe_allow_html=True,
-            )
-        with cols[3]:
-            st.markdown(
-                f"<div class='admin-card'><div class='admin-kpi'>{total_theatres}</div><div class='admin-label'>Total Theatres</div></div>",
-                unsafe_allow_html=True,
-            )
-
-        st.markdown("### Admin Insights")
-        col_a, col_b = st.columns(2)
-        with col_a:
-            df_top_movies = pd.read_sql_query(
-                "SELECT movie, COUNT(*) as bookings FROM bookings GROUP BY movie ORDER BY bookings DESC LIMIT 5",
-                conn,
-            )
-            if not df_top_movies.empty:
-                st.bar_chart(df_top_movies.set_index("movie"))
-            else:
-                st.info("No bookings yet")
-        with col_b:
-            df_cities = pd.read_sql_query(
-                "SELECT city, COUNT(*) as bookings FROM bookings GROUP BY city ORDER BY bookings DESC LIMIT 5",
-                conn,
-            )
-            if not df_cities.empty:
-                st.bar_chart(df_cities.set_index("city"))
-            else:
-                st.info("No bookings yet")
-
-        df_daily = pd.read_sql_query(
-            "SELECT show_date, COUNT(*) as bookings FROM bookings GROUP BY show_date ORDER BY show_date",
-            conn,
-        )
-        if not df_daily.empty:
-            st.line_chart(df_daily.set_index("show_date"))
-
-        df_revenue = pd.read_sql_query(
-            "SELECT show_date, SUM(total_amount) as revenue FROM bookings GROUP BY show_date ORDER BY show_date",
-            conn,
-        )
-        if not df_revenue.empty:
-            st.area_chart(df_revenue.set_index("show_date"))
-
-    if nav == "Movies":
-        st.subheader("Movies Management")
-        movies_df = pd.read_sql_query("SELECT * FROM admin_movies", conn)
-        st.dataframe(movies_df, use_container_width=True)
-
-        if st.button("Rebuild Movie Database from TMDb"):
-            rebuild_movie_db(API_KEY, pages=5)
-            st.success("Movie database rebuilt.")
- 
-        st.markdown("### Add Movie")
-        with st.form("admin_add_movie_form"):
-            title = st.text_input("Title")
-            rating = st.number_input("Rating", min_value=0.0, max_value=10.0, value=7.0, step=0.1)
-            genre = st.text_input("Genre (comma separated)")
-            language = st.selectbox("Language", ["english", "hindi"])
-            release_date = st.date_input("Release Date")
-            status = st.selectbox("Status", ["Now Playing", "Coming Soon"])
-            poster_url = st.text_input("Poster URL (optional)")
-            poster_file = st.file_uploader("Upload Poster (optional)", type=["png", "jpg", "jpeg"])
-            is_running = st.checkbox("Currently Running", value=True)
-            submitted = st.form_submit_button("Add Movie")
-        if submitted:
-            if poster_file:
-                os.makedirs("posters", exist_ok=True)
-                safe_name = re.sub(r"[^a-zA-Z0-9_-]", "_", title.strip().lower())
-                file_path = os.path.join("posters", f"{safe_name}.jpg")
-                with open(file_path, "wb") as f:
-                    f.write(poster_file.read())
-                poster_url = file_path
-            try:
-                c.execute(
-                    "INSERT INTO admin_movies (title, rating, genre, poster_url, language, release_date, status, is_running) VALUES (?,?,?,?,?,?,?,?)",
-                    (title, rating, genre, poster_url, language, str(release_date), status, 1 if is_running else 0),
-                )
-                conn.commit()
-                st.success("Movie added")
-            except Exception:
-                st.warning("Movie already exists or invalid data")
-
-        st.markdown("### Edit Movie")
-        c.execute("SELECT title FROM admin_movies ORDER BY title")
-        titles = [r[0] for r in c.fetchall()]
-        if titles:
-            selected = st.selectbox("Select Movie", titles, key="edit_movie_select")
-            c.execute("SELECT rating, genre, poster_url, language, release_date, status, is_running FROM admin_movies WHERE title=?", (selected,))
-            row = c.fetchone()
-            if row:
-                with st.form("admin_edit_movie_form"):
-                    rating = st.number_input("Rating", min_value=0.0, max_value=10.0, value=float(row[0] or 7.0), step=0.1)
-                    genre = st.text_input("Genre", value=row[1] or "")
-                    language = st.selectbox("Language", ["english", "hindi"], index=0 if row[3] == "english" else 1)
-                    release_date = st.text_input("Release Date", value=row[4] or "")
-                    status = st.selectbox("Status", ["Now Playing", "Coming Soon"], index=0 if row[5] == "Now Playing" else 1)
-                    poster_url = st.text_input("Poster URL", value=row[2] or "")
-                    is_running = st.checkbox("Currently Running", value=bool(row[6]))
-                    saved = st.form_submit_button("Save Changes")
-                if saved:
-                    c.execute(
-                        "UPDATE admin_movies SET rating=?, genre=?, poster_url=?, language=?, release_date=?, status=?, is_running=? WHERE title=?",
-                        (rating, genre, poster_url, language, release_date, status, 1 if is_running else 0, selected),
-                    )
-                    conn.commit()
-                    st.success("Movie updated")
-
-            st.markdown("### Delete Movie")
-            if st.button("Delete Selected Movie", key="delete_movie_btn"):
-                c.execute("DELETE FROM admin_movies WHERE title=?", (selected,))
-                conn.commit()
-                st.success("Movie deleted")
-
-    if nav == "Theatres":
-        st.subheader("Theatres and Shows")
-        theatres_df = pd.read_sql_query("SELECT * FROM theatres", conn)
-        st.dataframe(theatres_df, use_container_width=True)
-
-        st.markdown("### Add Show")
-        with st.form("admin_add_show_form"):
-            city = st.text_input("City")
-            theatre = st.text_input("Theatre Name")
-            show_time = st.text_input("Show Time (e.g., 6:30 PM)")
-            c.execute("SELECT title FROM admin_movies ORDER BY title")
-            titles = [r[0] for r in c.fetchall()]
-            movie_title = st.selectbox("Movie", titles) if titles else st.text_input("Movie Title")
-            submitted = st.form_submit_button("Add Showtime")
-        if submitted:
-            c.execute(
-                "INSERT INTO theatres (city, theatre, show_time, movie_title) VALUES (?,?,?,?)",
-                (city, theatre, show_time, movie_title),
-            )
-            conn.commit()
-            st.success("Showtime added")
-
-        st.markdown("### Remove Showtime")
-        c.execute("SELECT id, city, theatre, show_time FROM theatres ORDER BY city, theatre")
-        rows = c.fetchall()
-        if rows:
-            options = {f"{r[1]} | {r[2]} | {r[3]} (#{r[0]})": r[0] for r in rows}
-            choice = st.selectbox("Select Showtime", list(options.keys()))
-            theatre_id = options[choice]
-            if st.button("Remove Selected Showtime"):
-                c.execute("DELETE FROM theatres WHERE id=?", (theatre_id,))
-                conn.commit()
-                st.success("Showtime removed")
-
-    if nav == "Bookings":
-        st.subheader("Bookings Management")
-        bookings_df = pd.read_sql_query(
-            "SELECT username, movie, theatre, seats, show_time, booking_id FROM bookings",
-            conn,
-        )
-        st.dataframe(bookings_df, use_container_width=True)
-        c.execute("SELECT booking_id FROM bookings ORDER BY show_date DESC")
-        booking_ids = [r[0] for r in c.fetchall()]
-        if booking_ids:
-            cancel_id = st.selectbox("Cancel Booking", booking_ids)
-            if st.button("Cancel Selected Booking"):
-                c.execute("DELETE FROM bookings WHERE booking_id=?", (cancel_id,))
-                conn.commit()
-                st.success("Booking cancelled")
-
-    if nav == "Users":
-        st.subheader("Users Management")
-        users_df = pd.read_sql_query("SELECT username, email, role, is_active FROM users", conn)
-        st.dataframe(users_df, use_container_width=True)
-
-        c.execute("SELECT username FROM users ORDER BY username")
-        user_list = [r[0] for r in c.fetchall()]
-        if user_list:
-            selected_user = st.selectbox("Select User", user_list)
-            if st.button("Disable User"):
-                c.execute("UPDATE users SET is_active=0 WHERE username=?", (selected_user,))
-                conn.commit()
-                st.success("User disabled")
-            if st.button("Enable User"):
-                c.execute("UPDATE users SET is_active=1 WHERE username=?", (selected_user,))
-                conn.commit()
-                st.success("User enabled")
-            if st.button("Delete User"):
-                c.execute("DELETE FROM users WHERE username=?", (selected_user,))
-                conn.commit()
-                st.success("User deleted")
-
-            st.markdown("### Booking History")
-            history = pd.read_sql_query(
-                "SELECT movie, theatre, show_date, show_time, seats, booking_id FROM bookings WHERE username=?",
-                conn,
-                params=(selected_user,),
-            )
-            st.dataframe(history, use_container_width=True)
 
 def get_user_recent_movies(username, limit=50):
     c.execute(

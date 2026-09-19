@@ -61,12 +61,22 @@ def render_booking():
                         poster = "https://image.tmdb.org/t/p/w500" + movie["poster_path"]
                     if not poster and movie.get("title"):
                         poster = fetch_poster(movie.get("title"))
-                    if poster:
-                        st.image(poster, width=180)
                     title = movie.get("title", "")
-                    st.caption(title)
-                    if st.button("Select", key=f"pick_{title}", use_container_width=True):
+                    is_selected = st.session_state.booking_movie == title
+                    render_movie_card(
+                        title, poster,
+                        rating=movie.get("vote_average", movie.get("rating")),
+                        tag="Selected" if is_selected else None,
+                        tag_class="tag-green",
+                    )
+                    btn_label = "Selected" if is_selected else "Select"
+                    if st.button(
+                        btn_label, key=f"pick_{title}", use_container_width=True,
+                        type="primary" if is_selected else "secondary",
+                        icon=":material/check_circle:" if is_selected else None,
+                    ):
                         st.session_state.booking_movie = title
+                        st.rerun()
             if st.session_state.booking_movie is None:
                 st.session_state.booking_movie = now_titles[0]
             movie_choice = st.session_state.booking_movie
@@ -131,8 +141,16 @@ def render_booking():
                         f"</div>",
                         unsafe_allow_html=True,
                     )
-                    if st.button("Choose", key=f"choose_theatre_{th}"):
+                    is_active_theatre = th == st.session_state.booking_theatre
+                    if st.button(
+                        "Selected" if is_active_theatre else "Choose",
+                        key=f"choose_theatre_{th}",
+                        type="primary" if is_active_theatre else "secondary",
+                        icon=":material/check_circle:" if is_active_theatre else None,
+                        use_container_width=True,
+                    ):
                         st.session_state.booking_theatre = th
+                        st.rerun()
             theatre = st.session_state.booking_theatre or theatre_options[0]
             st.markdown(f"Selected Theatre: {theatre}")
             st.markdown("</div>", unsafe_allow_html=True)
@@ -146,13 +164,17 @@ def render_booking():
             if st.session_state.booking_time not in show_times:
                 st.session_state.booking_time = show_times[0]
             st.write("Show Times")
-            time_cols = st.columns(4)
+            time_cols = st.columns(2)
             for i, t in enumerate(show_times):
-                with time_cols[i % 4]:
+                with time_cols[i % 2]:
                     active = st.session_state.booking_time == t
-                    label = t if not active else f"{t} ✓"
-                    if st.button(label, key=f"time_{t}"):
+                    if st.button(
+                        t, key=f"time_{t}", use_container_width=True,
+                        type="primary" if active else "secondary",
+                        icon=":material/check:" if active else None,
+                    ):
                         st.session_state.booking_time = t
+                        st.rerun()
             show_time = st.session_state.booking_time or show_times[0]
             st.markdown("</div>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
@@ -224,7 +246,10 @@ def render_booking():
                 proceed_clicked = False
             else:
                 confirm_ok = st.checkbox("I confirm my selected seats and showtime")
-                proceed_clicked = st.button("Book Tickets", key="proceed_payment_btn", disabled=not confirm_ok)
+                proceed_clicked = st.button(
+                    "Book Tickets", key="proceed_payment_btn", disabled=not confirm_ok,
+                    type="primary", icon=":material/local_activity:", use_container_width=True,
+                )
             st.markdown("</div>", unsafe_allow_html=True)
     
         if proceed_clicked:
@@ -383,8 +408,17 @@ def render_booking():
         elif payment_method == "Wallet":
             valid = bool(wallet_type)
     
-        pay = st.button("Pay Now", key="pay_now_btn", disabled=not valid)
-        cancel = st.button("Cancel Payment", key="cancel_payment_btn")
+        pay_cols = st.columns([2, 1])
+        with pay_cols[0]:
+            pay = st.button(
+                "Pay Now", key="pay_now_btn", disabled=not valid,
+                type="primary", icon=":material/lock:", use_container_width=True,
+            )
+        with pay_cols[1]:
+            cancel = st.button(
+                "Cancel", key="cancel_payment_btn",
+                type="secondary", use_container_width=True,
+            )
         if cancel:
             release_seats(
                 pb["movie"],

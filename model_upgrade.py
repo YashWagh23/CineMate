@@ -53,6 +53,9 @@ else:
     remaining = movies[~priority_mask].sample(12000, random_state=42)
     movies = pd.concat([priority_movies, remaining]).drop_duplicates()
 
+# Reset the index so it stays aligned with the similarity matrix's row positions
+movies.reset_index(drop=True, inplace=True)
+
 print("Final movies used for ML:", len(movies))
 
 # ================= TFIDF =================
@@ -73,4 +76,4 @@ similarity = cosine_similarity(vectors)
 pickle.dump(movies.to_dict(), open('movies.pkl', 'wb'))
 pickle.dump(similarity, open('similarity.pkl', 'wb'))
 
-print("✅ UPGRADED pickle files created successfully!")
+print("Upgraded pickle files created successfully!")

@@ -9,6 +9,8 @@ movies = pd.read_csv('tmdb_5000_movies.csv')
 # Keep needed columns
 movies = movies[['title', 'overview']]
 movies.dropna(inplace=True)
+# Reset the index so it stays aligned with the similarity matrix's row positions
+movies.reset_index(drop=True, inplace=True)
 
 # Convert overview into vectors
 tfidf = TfidfVectorizer(stop_words='english')
@@ -21,4 +23,4 @@ similarity = cosine_similarity(vectors)
 pickle.dump(movies.to_dict(), open('movies.pkl', 'wb'))
 pickle.dump(similarity, open('similarity.pkl', 'wb'))
 
-print("✅ Pickle files created successfully!")
+print("Pickle files created successfully!")
