@@ -20,8 +20,8 @@ def render_home():
         st.write("Release:", release)
         st.write(overview)
     
-        hero_cols = st.columns(4)
-        with hero_cols[0]:
+        hero_row1 = st.columns(2)
+        with hero_row1[0]:
             if st.button("Trailer", key="play_trailer", type="primary", icon=":material/play_arrow:", use_container_width=True):
                 trailer_url = fetch_trailer(selected_movie)
                 if trailer_url:
@@ -33,17 +33,18 @@ def render_home():
                         st.warning("Trailer not available")
                 else:
                     st.warning("Trailer not available")
-        with hero_cols[1]:
-            if st.button("Watchlist", key="add_watchlist", type="secondary", icon=":material/bookmark_add:", use_container_width=True):
+        with hero_row1[1]:
+            if st.button("Save", key="add_watchlist", type="secondary", icon=":material/bookmark_add:", use_container_width=True):
                 if selected_movie not in st.session_state.watchlist:
                     st.session_state.watchlist.append(selected_movie)
                     st.success("Added to watchlist")
                 else:
                     st.info("Already in watchlist")
-        with hero_cols[2]:
+        hero_row2 = st.columns(2)
+        with hero_row2[0]:
             if st.button("Details", key="details_btn", type="secondary", icon=":material/info:", use_container_width=True):
                 st.session_state.show_details = True
-        with hero_cols[3]:
+        with hero_row2[1]:
             if st.button("Streaming", key="where_watch_btn", type="secondary", icon=":material/live_tv:", use_container_width=True, help="Search where to watch this online"):
                 query = urllib.parse.quote(f"{selected_movie} where to watch")
                 url = f"https://www.google.com/search?q={query}"
