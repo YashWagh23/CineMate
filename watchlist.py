@@ -34,12 +34,20 @@ def render_watchlist():
             st.success(f"Notification enabled for {notify_movie}")
 
         st.markdown("<br>", unsafe_allow_html=True)
-        cols = st.columns(4)
+        cols = st.columns(3)
         for i, item in enumerate(items):
-            with cols[i % 4]:
-                render_movie_card(item)
+            with cols[i % 3]:
+                poster = fetch_poster(item)
+                rating, overview, release = fetch_details(item)
+                render_movie_card(item, poster_url=poster, rating=rating)
+                if st.button("Details", key=f"wl_details_{item}", type="secondary", icon=":material/info:", use_container_width=True):
+                    st.session_state[f"wl_show_{item}"] = not st.session_state.get(f"wl_show_{item}", False)
+                if st.session_state.get(f"wl_show_{item}"):
+                    st.write("Release:", release or "Unknown")
+                    st.write(overview or "No overview available.")
                 if st.button("Remove", key=f"remove_{item}", type="secondary", icon=":material/delete:", use_container_width=True):
                     st.session_state.watchlist.remove(item)
+                    st.session_state.pop(f"wl_show_{item}", None)
                     st.success("Removed")
                     st.rerun()
     
